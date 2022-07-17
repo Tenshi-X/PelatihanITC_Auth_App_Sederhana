@@ -1,4 +1,5 @@
 import 'package:auth_firebase/home_screen.dart';
+import 'package:auth_firebase/search_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -65,7 +66,7 @@ class _loginScreenState extends State<loginScreen> {
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => Homepage()))
+                                      builder: (context) => searchScreen()))
                             });
                   } catch (e) {
                     print(e);

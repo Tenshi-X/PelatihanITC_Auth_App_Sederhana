@@ -3,99 +3,61 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-class Homepage extends StatefulWidget {
-  const Homepage({Key? key}) : super(key: key);
-
-  @override
-  State<Homepage> createState() => _HomepageState();
-}
-
-class _HomepageState extends State<Homepage> {
+class HomePage extends StatelessWidget {
+  
+  HomePage({Key? key, required this.title}) : super(key: key);
+  
+  final String title;
   dynamic poster;
-  String? body = '', hasil = '';
-  String? info;
-  TextEditingController titleController = TextEditingController();
+  String? info = 'Loading...';
+  int apiKey = 65159463;
+  Map data = {};
+  List film = [];
 
-  @override
-  void initState() {
-    info = 'Silakan Masukkan Judul Film';
-    super.initState();
+  getData() async {
+    var response = await http
+        .get(Uri.parse('http://www.omdbapi.com/?apikey=$apiKey&s=$title'));
+    var data = (json.decode(response.body) as Map<dynamic, dynamic>)['Search'];
+    if (response.statusCode == 200) {
+      info = 'Pencarian berhasil';
+      data.forEach((element) {
+        film.add(element);
+      });
+    }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Pencarian Judul Film'),
-          centerTitle: true,
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Title',
-              ),
-            ),
-            ElevatedButton(
-              onPressed: (() async {
-                var response = await http
-                    .get(Uri.parse('http://www.omdbapi.com/?apikey=65159463&s='
-                        '${titleController.text}'));
-                var data = json.decode(response.body) as Map<dynamic, dynamic>;
-                if (response.statusCode == 200 && data['Response'] == 'True') {
-                  info = 'Pencarian berhasil';
-                  setState(() {
-                    body = data['Search'][0]['Title'];
-                    hasil = 'Year : ${data['Search'][0]['Year']}';
-                  });
-                } else {
-                  info = 'Judul film tidak ditemukan';
-                  setState(() {
-                    body = '';
-                  });
-                }
-              }),
-              child: Text('Cari'),
-            ),
-            Text(
-              info!,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Poppins',
-              ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            ExpansionPanelList(
-              expansionCallback: (int index, bool isExpanded) {
-                setState(() {
-                  if (isExpanded == false) {
-                    isExpanded = true;
-                  } else {
-                    isExpanded = false;
-                  }
-                });
-              },
-              children: [
-                ExpansionPanel(
-                  canTapOnHeader: true,
-                  headerBuilder: (BuildContext context, bool isExpanded) {
-                    return ListTile(
-                      title: Text(body!),
-                    );
-                  },
-                  body: ListTile(
-                    title: Text(hasil!),
+      appBar: AppBar(
+        title: const Text('Pencarian Judul Film'),
+        centerTitle: true,
+      ),
+      body: FutureBuilder(
+        future: getData(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return ListView.builder(
+              itemCount: film.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(film[index]['Title']),
+                  subtitle: Text(film[index]['Year']),
+                  leading: Image.network(
+                    film[index]['Poster'],
+                    fit: BoxFit.cover,
                   ),
-                ),
-              ],
-            ),
-          ],
-        ));
+                );
+              },
+            );
+          } else if (snapshot.hasError) {
+            return Text(snapshot.error.toString());
+          } else {
+            return Center(
+              child: Text(info!),
+            );
+          }
+        },
+      ),
+    );
   }
 }
